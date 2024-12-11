@@ -1,0 +1,16 @@
+https://solicitors.lawsociety.org.uk/search/results?Pro=True&Type=1
+
+
+
+I need the records of ALL individuals liste in here from their individual profile pages - this involves clicking into their profile and bypassing an email protection script.
+
+
+https://solicitors.lawsociety.org.uk/person/1000085402/michael-aherne
+
+
+The data I need is:
+Name
+Email
+Phone
+Employer
+Employers address
