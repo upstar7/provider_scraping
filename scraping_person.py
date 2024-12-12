@@ -24,6 +24,35 @@ driver_service = Service(ChromeDriverManager().install())
 # Initialize WebDriver
 driver = webdriver.Chrome(service=driver_service, options=chrome_options)
 
+def get_email(profile_url):
+    try:
+        driver.get(profile_url)
+        time.sleep(2)  # Allow the page to load
+
+        # Locate the "Show" button
+        try:
+            show_button = driver.find_element(By.CSS_SELECTOR, "a#showhide.show_hide")
+            # Scroll into view to ensure visibility
+            driver.execute_script("arguments[0].scrollIntoView(true);", show_button)
+            # Attempt to click the button
+            driver.execute_script("arguments[0].click();", show_button)
+            time.sleep(1)  # Allow the email to become visible
+        except Exception as e:
+            print(f"Show button not found or could not be clicked: {e}")
+
+        # Now find the email
+        try:
+            email_element = driver.find_element(By.CSS_SELECTOR, "dd.slidingDiv a[href^='mailto:']")
+            email = email_element.text.strip() if email_element else "N/A"
+        except Exception as e:
+            print(f"Email not found after clicking Show: {e}")
+            email = "N/A"
+
+        return email
+    except Exception as e:
+        print(f"Error retrieving email from {profile_url}: {e}")
+        return "N/A"
+
 # Function to scrape a single page
 def scrape_page(page_number):
     base_url = f"https://solicitors.lawsociety.org.uk/search/results?Pro=True&Type=1&Page={page_number}"
@@ -49,6 +78,7 @@ def scrape_page(page_number):
             # Re-find each element within the loop to avoid stale references
             name_element = solicitor.find_element(By.CSS_SELECTOR, "header .heading h2 a")
             name = name_element.text.strip() if name_element else "N/A"
+            profile_url = name_element.get_attribute("href")
 
             try:
                 employer_element = solicitor.find_element(By.CSS_SELECTOR, "dl dd.highlight a")
@@ -66,11 +96,13 @@ def scrape_page(page_number):
             except:
                 phone = "N/A"
 
+            email = get_email(profile_url)
+
             # Append the data to the list
-            data.append([name, employer, address, phone])
+            data.append([name, employer, address, phone, email])
         except Exception as e:
             print(f"Error scraping solicitor data on page {page_number}: {e}")
-            data.append(["N/A", "N/A", "N/A", "N/A"])  # In case of an error, add N/A for all fields
+            data.append(["N/A", "N/A", "N/A", "N/A", "N/A"])  # In case of an error, add N/A for all fields
 
     return data
 
@@ -86,9 +118,8 @@ for page in range(1, 31):
 driver.quit()
 
 # Create a DataFrame
-df = pd.DataFrame(all_data, columns=["Name", "Employer", "Employer Address", "Phone"])
+df = pd.DataFrame(all_data, columns=["Name", "Employer", "Employer Address", "Phone", "Email"])
 
 # Save to Excel
-df.to_excel("solicitors_data_page_1_to_30.xlsx", index=False)
+df.to_excel("solicitors_data_email.xlsx", index=False)
 
-print("Data saved to 'solicitors_data_page_1_to_30.xlsx'")
